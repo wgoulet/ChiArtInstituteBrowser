@@ -11,7 +11,7 @@ def main():
     headers = {'user-agent': 'art-institute-browse/wgoulet@gmail.com'}
 
     # search only for individual artists
-    artist = "paul klee"
+    artist = "degas"
     searchqry = {
         "query": {
             "bool": {
