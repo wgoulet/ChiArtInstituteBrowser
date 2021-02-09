@@ -13,13 +13,23 @@ import moviepy.editor
 import moviepy.Clip
 import mutagen
 import ffmpeg
+import sys
 
-def main():
+def main(argv):
     print ("hello world")
+    pprint.pprint(argv)
+    artist = ""
+    if len(argv) < 2:
+        print("Invalid arguments; usage main.py [artist name]")
+    else:
+        for i in range(1,len(argv)):
+            artist = artist + "{0} ".format(argv[i])
+        artist = artist.strip()
+    
+    print("Searching for artist {0} works".format(artist))
     headers = {'user-agent': 'art-institute-browse/wgoulet@gmail.com'}
 
     # search only for individual artists
-    artist = "edward hopper"
     searchqry = {
         "query": {
             "bool": {
@@ -143,7 +153,6 @@ def main():
                     subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
             except:
                 print("Unable to get image for {0}".format(item['title']))
-                raise
 
             time.sleep(1)
 
@@ -154,4 +163,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
