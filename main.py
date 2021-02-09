@@ -1,4 +1,5 @@
 import os
+import subprocess
 import requests
 import pprint
 import time
@@ -11,6 +12,7 @@ import math
 import moviepy.editor
 import moviepy.Clip
 import mutagen
+import ffmpeg
 
 def main():
     print ("hello world")
@@ -129,17 +131,17 @@ def main():
             r = requests.get(fullurl,headers=headers)
             try:
                 r.raise_for_status()
+                
                 img = r.content
+                imgname = "{0}-{1}.jpg".format(artist,item['title'])
+                vname = "{0}-{1}.mp4".format(artist,item['title'])
+                fvname = "{0}-{1}-all.mp4".format(artist,item['title'])
                 file = open("{0}-{1}.jpg".format(artist,item['title']),"wb")
                 file.write(img)
                 file.close()
-                clip = moviepy.editor.ImageClip("{0}-{1}.jpg".format(artist,item['title']),"rb")
-                clip.duration = int(math.ceil(audlen))
-                vclip = clip.set_duration(int(math.ceil(audlen)))
-                audio = moviepy.editor.AudioFileClip(audfname)
-                final = vclip.set_audio(audio)
-                final.write_videofile("{0}-{1}.mp4".format(artist,item['title']),
-                    codec= 'mpeg4',fps=30,audio=True)
+                subprocess.run(['ffmpeg','-loop','1','-i', imgname,"-c:v","libx264",
+                    '-t','150','-pix_fmt','yuv420p','-vf','scale=320:240',vname])
+                subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
             except:
                 print("Unable to get image for {0}".format(item['title']))
                 raise
