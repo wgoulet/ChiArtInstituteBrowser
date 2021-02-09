@@ -114,10 +114,8 @@ def main():
                     file = open(audfname,"wb")
                     file.write(audio)
                     file.close()
-                    audfclip = moviepy.editor.AudioFileClip(audfname,fps= 44100)
-                    audfclip.close()
                     audinfo = mutagen.File(audfname)
-                    audlen = audinfo.info.length
+                    audlen = math.ceil(audinfo.info.length)
 
 
             imagesearch = "https://api.artic.edu/api/v1/artworks/{0}?fields=id,title,image_id".format(item['id'])
@@ -140,7 +138,7 @@ def main():
                 file.write(img)
                 file.close()
                 subprocess.run(['ffmpeg','-loop','1','-i', imgname,"-c:v","libx264",
-                    '-t','150','-pix_fmt','yuv420p','-vf','scale=320:240',vname])
+                    '-t',"{0}".format(audlen),'-pix_fmt','yuv420p','-vf','scale=320:240',vname])
                 subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
             except:
                 print("Unable to get image for {0}".format(item['title']))
