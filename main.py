@@ -19,7 +19,7 @@ def main():
     headers = {'user-agent': 'art-institute-browse/wgoulet@gmail.com'}
 
     # search only for individual artists
-    artist = "van gogh"
+    artist = "edward hopper"
     searchqry = {
         "query": {
             "bool": {
@@ -137,9 +137,10 @@ def main():
                 file = open("{0}-{1}.jpg".format(artist,item['title']),"wb")
                 file.write(img)
                 file.close()
-                subprocess.run(['ffmpeg','-loop','1','-i', imgname,"-c:v","libx264",
-                    '-t',"{0}".format(audlen),'-pix_fmt','yuv420p','-vf','scale=320:240',vname])
-                subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
+                if audfname != None:
+                    subprocess.run(['ffmpeg','-loop','1','-i', imgname,"-c:v","libx264",
+                     '-t',"{0}".format(audlen),'-pix_fmt','yuv420p','-vf','scale=320:240',vname])
+                    subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
             except:
                 print("Unable to get image for {0}".format(item['title']))
                 raise
