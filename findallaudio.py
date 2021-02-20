@@ -49,7 +49,7 @@ def main(argv):
     p = Path("dataset.dmp")
     if p.exists() == False or args.force_refresh == True:
         headers = {'user-agent': 'art-institute-browse/wgoulet@gmail.com'}
-        url = "https://api.artic.edu/api/v1/sounds/search?limit=100&fields=artwork_ids,title"
+        url = "https://api.artic.edu/api/v1/sounds/search?limit=100&fields=artwork_ids,title,id"
         r = requests.post(url,headers=headers,json=searchqry)
         r.raise_for_status()
         sounds = r.json()
@@ -58,7 +58,7 @@ def main(argv):
             dataset = dataset + sounds['data']
             pagect = int(sounds['pagination']['total_pages'])
             for i in range(2,pagect + 1):
-                url = f"https://api.artic.edu/api/v1/sounds/search?limit=100&fields=artwork_ids,title&page={i}"
+                url = f"https://api.artic.edu/api/v1/sounds/search?limit=100&fields=artwork_ids,title,id&page={i}"
                 r = requests.post(url,headers=headers,json=searchqry)
                 r.raise_for_status()
                 results = r.json()
@@ -71,7 +71,7 @@ def main(argv):
         with open('dataset.dmp','rb') as dumpfile:
             dataset = pickle.load(dumpfile)
 
-    pprint.pprint(dataset)
+    #print.pprint(dataset)
 
     # To minimize API calls, we will query the API in batches of 20
 
@@ -102,6 +102,24 @@ def main(argv):
     else:
         with open("artworkdata.dmp","rb") as artdump:
             artworks = pickle.load(artdump)
-    artworks
+    #pprint.pprint(artworks)
+    # Create id index map of both the sound dataset and artworks dataset for
+    # easy lookups/iteration
+
+    idataset = {}
+    for e in dataset:
+        idataset[e['id']] = e
+
+    iartworks = {}
+    for e in artworks:
+        iartworks[e['id']] = e
+
+    for e in idataset:
+        combinedset = []
+        for id in idataset[e]['artwork_ids']:
+            if id in iartworks.keys():
+                combinedset = combinedset + [idataset[e],iartworks[id]]
+
+    pprint.pprint(idataset)
 if __name__ == "__main__":
     main(sys.argv)
