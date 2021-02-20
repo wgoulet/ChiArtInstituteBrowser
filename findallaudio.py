@@ -73,6 +73,35 @@ def main(argv):
 
     pprint.pprint(dataset)
 
+    # To minimize API calls, we will query the API in batches of 20
 
+    count = 0
+    querystring = ""
+    artworks = []
+    p = Path("artworkdata.dmp")
+
+    if p.exists() == False or args.force_refresh == True:
+        for entry in dataset:
+            count += 1
+            querystring += f"{str(entry['artwork_ids'][0])},"
+            if count % 20 == 0:
+                querystring = querystring.rstrip(',')
+                pprint.pprint(querystring)
+                searchqry = {
+                    "ids": querystring
+                }
+                pprint.pprint(searchqry)
+                headers = {'user-agent': 'art-institute-browse/wgoulet@gmail.com'}
+                url = "https://api.artic.edu/api/v1/artworks"
+                r = requests.post(url,headers=headers,json=searchqry)
+                r.raise_for_status()
+                artworks = artworks + r.json()['data']
+                querystring = ""    
+        with open("artworkdata.dmp","wb") as artdump:
+            pickle.dump(artworks,artdump)
+    else:
+        with open("artworkdata.dmp","rb") as artdump:
+            artworks = pickle.load(artdump)
+    artworks
 if __name__ == "__main__":
     main(sys.argv)
