@@ -142,10 +142,44 @@ def main(argv):
 		r = requests.get(url,headers=headers)
 		r.raise_for_status()
 		audio = r.content
-		audfname = f"{fullentry['artist']['title']}-{fullentry['artwork']['title']}-audiostop.mp3"
+		title = fullentry['artwork']['title']
+		artist = fullentry['artist']['title']
+		artid = fullentry['artwork']['id']
+		if len(title) > 100:
+			title = title[:100]
+		audfname = f"{artist}-{title}-audiostop.mp3"
 		file = open(audfname,"wb")
 		file.write(audio)
 		file.close()
+		audinfo = mutagen.File(audfname)
+		audlen = math.ceil(audinfo.info.length)
+		time.sleep(1)
+		imagesearch = f"https://api.artic.edu/api/v1/artworks/{artid}?fields=id,title,image_id"
+		r = requests.get(imagesearch,headers=headers)
+		r.raise_for_status()
+		imageinfo = r.json()
+		imageurl = imageinfo['config']['iiif_url']
+		imageid = imageinfo['data']['image_id']
+		imageparams = "/full/1686,/0/default.jpg"
+		fullurl = "{0}/{1}{2}".format(imageurl,imageid,imageparams)
+		r = requests.get(fullurl,headers=headers)
+		try:
+			r.raise_for_status()
+			img = r.content
+			imgname = f"{artist}-{title}.jpg"
+			vname = f"{artist}-{title}.mp4"
+			fvname = f"{artist}-{title}-all.mp4"
+			file = open(imgname,"wb")
+			file.write(img)
+			file.close()
+			if audfname != None:
+				subprocess.run(['ffmpeg','-loop','1','-i', imgname,"-c:v","libx264",
+					 '-t',"{0}".format(audlen),'-pix_fmt','yuv420p','-vf','scale=320:240',vname])
+				subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
+		except:
+			print("Unable to get image for {0}".format(item['title']))
+
+			time.sleep(1)
 	pprint.pprint(idataset)
 if __name__ == "__main__":
 	main(sys.argv)
