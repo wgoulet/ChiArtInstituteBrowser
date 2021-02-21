@@ -21,8 +21,7 @@ import argparse
 
 def main(argv):
 	pprint.pprint(argv)
-	parser = argparse.ArgumentParser(description='Create videos from all art with audio tour info',
-		exit_on_error=False)
+	parser = argparse.ArgumentParser(description='Create videos from all art with audio tour info',exit_on_error=False)
 	parser.add_argument('--force-refresh',action='store_true',required=False,
 					help='Forces a refresh of the dataset against the API, if not specified' \
 						'will use locally cached dataset')
