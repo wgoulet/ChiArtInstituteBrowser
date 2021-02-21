@@ -177,9 +177,8 @@ def main(argv):
 					 '-t',"{0}".format(audlen),'-pix_fmt','yuv420p','-vf','scale=320:240',vname])
 				subprocess.run(['ffmpeg','-i',audfname,'-i',vname,fvname])
 		except:
-			print("Unable to get image for {0}".format(item['title']))
-
-			time.sleep(1)
+			print(f"Unable to generate video for {artist} - {title}")
+		time.sleep(1)
 	pprint.pprint(idataset)
 if __name__ == "__main__":
 	main(sys.argv)
