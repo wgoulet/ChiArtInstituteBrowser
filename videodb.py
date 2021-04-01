@@ -6,7 +6,6 @@ import os
 import pickle
 import pprint
 import re
-import sqlite3
 import subprocess
 import sys
 import time
@@ -14,19 +13,19 @@ import urllib.parse
 from io import FileIO
 from pathlib import Path
 from typing import Optional
+from pymongo import MongoClient
 import ffmpeg
 import mutagen
 import requests
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
 from pydantic import BaseModel
 from starlette.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 import uvicorn
 from fastapi.responses import StreamingResponse
 import io
 
-class Artwork():
+class Artwork(BaseModel):
 	title: str
 	arttype: str
 	artist: str
@@ -36,37 +35,19 @@ class Artwork():
 def main(argv):
 	print("hello world")
  
-	connection = sqlite3.connect("artinstvid.db",detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-	cursor = connection.cursor()
-
-	cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='artwork'")
-
-	if cursor.fetchone()[0]!=1:
-		print("Creating table")
-		cursor.execute("CREATE TABLE artwork (title TEXT, arttype TEXT, \
-			artist TEXT, image BLOB, video BLOB)")
-		connection.commit()
-	item = Artwork()
+	item = Artwork(artist="",title="",arttype="")
 	with open("Edward Hopper-Nighthawks.jpg","rb") as imgfile:
 		item.image = imgfile.read()
 	with open("edward hopper-Nighthawks-all.mp4","rb") as vidfile:
 		item.video = vidfile.read()
-	cursor = connection.cursor()
 	item.artist = "Edward Hopper"
 	item.title = "Nighthawks"
 	item.arttype = "Painting"
-	record = (item.artist,item.title,item.arttype,item.image,item.video)
-	cursor.execute("INSERT INTO artwork (artist, title, arttype, image, video) VALUES (?,?,?,?,?)",record)
-	connection.commit()
 
-	cursor.execute("SELECT image from artwork")
-	timage = cursor.fetchone()[0]
-	with open("test.jpg","wb") as testimg:
-		testimg.write(timage)
-	cursor.execute("SELECT video from artwork")
-	tvideo = cursor.fetchone()[0]
-	with open("test.mp4","wb") as testvid:
-		testvid.write(tvideo)
+	client = MongoClient()
+	db = client.vid_database
+	collection = db.vid_collection
+	collection.insert_one(item.dict())
 
 	app = FastAPI()
 
@@ -86,15 +67,31 @@ def main(argv):
 	def read_root(request):
 		return JSONResponse({"you are": "authenticated"})
 
+	@app.route("/viddetails")
+	def get_viddetails(request):
+		item = Artwork(artist="",title="",arttype="")
+		client = MongoClient()
+		db = client.vid_database
+		collection = db.vid_collection
+		record = collection.find_one()
+		item.artist = record['artist']
+		item.title = record['title']
+		item.arttype = record['arttype']
+		headers = {"content-Type":"application/json"}
+		return JSONResponse(item.dict())
+
 	# From https://stackoverflow.com/questions/57314357/streaming-video-files-using-flask
 	def get_chunk(byte1=None, byte2=None):
 		start = 0
 		length = 102400
-		connection = sqlite3.connect("artinstvid.db",detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		cursor = connection.cursor()
-		cursor.execute("SELECT video from artwork")
-		tvideo = cursor.fetchone()[0]
-		connection.close()
+
+		client = MongoClient()
+		db = client.vid_database
+		collection = db.vid_collection
+		record = collection.find_one()
+		tvideo = record['video']
+
+
 		file_size = len(tvideo)
 		if byte1 < file_size:
 			start = byte1
@@ -128,9 +125,11 @@ def main(argv):
 
 	@app.route("/imgtest")
 	def read_img(request):
-		connection = sqlite3.connect("artinstvid.db",detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-		cursor = connection.cursor()
-		cursor.execute("SELECT image from artwork")
+		client = MongoClient()
+		db = client.vid_database
+		collection = db.vid_collection
+		record = collection.find_one()
+		tvideo = record['video']
 		tvideo = cursor.fetchone()[0]
 		connection.close()
 		stream = io.BytesIO(tvideo)
