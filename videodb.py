@@ -130,8 +130,6 @@ def main(argv):
 		collection = db.vid_collection
 		record = collection.find_one()
 		tvideo = record['video']
-		tvideo = cursor.fetchone()[0]
-		connection.close()
 		stream = io.BytesIO(tvideo)
 		#tvideo = open("test.mp4","rb")
 		return StreamingResponse(stream, media_type="image/jpeg")
